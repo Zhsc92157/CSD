@@ -226,9 +226,6 @@ class Node(object):
         return next_entry, next_bounding_boxes
 
     split = quadratic_split
-    # def split(self):
-    #     clusters = k_means_cluster(self.tree.CLUSTER_NUM, self.children)
-    #     return [Node.create_with_children(self.tree, c) for c in clusters]
 
 
 def k_means_cluster(k, nodes):
