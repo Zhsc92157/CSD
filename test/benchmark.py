@@ -324,7 +324,7 @@ def Effect_of_data_size_on_MonoRkNN():
     time = 10
     k = 100
     for i in range(3, 7):
-        test = CSDMonoTest(10 ** i)
+        test = SLICEMonoTest(10 ** i)
         test.run(k, time)
     for i in range(3, 7):
         test = SLICEMonoTest(10 ** i)

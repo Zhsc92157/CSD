@@ -154,7 +154,6 @@ def bi_pruning(q_id, q, k, index, cache):
         knn = list()
         while len(h) > 0 and len(knn) < k:
             dist, o, p = h.pop()
-            # p = points[o]
             if o != q_id and partition.intersects(p):
                 knn.append((o, p, dist))
             for neighbor in vd.neighbors(o):

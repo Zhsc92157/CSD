@@ -133,103 +133,99 @@ class Node(object):
                 self.children.append(Node.create_data_node(self.tree, obj, geom))
                 return self.adjust()
             else:
-                min_volume = -1
-                insert_idx = None
-                for i in range(len(self.children)):
-                    volume = bounding_box([self.children[i].geom, geom]).area
-                    if volume < min_volume or min_volume < 0:
-                        min_volume = volume
-                        insert_idx = i
-                self.geom = bounding_box([self.geom, geom])
-                inserting_child = self.children[insert_idx]
-                inserting_child = inserting_child.insert(obj, geom)
-                if len(inserting_child) > 1:
-                    del self.children[insert_idx]
-                    self.children += inserting_child
+                inserting_child = self.find_inserting_child(geom)
+                new_children = inserting_child.insert(obj, geom)
+                if len(new_children) > 1:
+                    self.children.remove(inserting_child)
+                    self.children += new_children
                 return self.adjust()
+
+    def find_inserting_child(self, geom):
+        min_enlargement = float('inf')
+        min_area = float('inf')
+        inserting_child = None
+        for e in self.children:
+            area = bounding_box([e.geom, geom]).area
+            enlargement = area - e.geom.area
+            if enlargement < min_enlargement:
+                inserting_child = e
+                min_enlargement = enlargement
+                min_area = area
+            elif enlargement == min_enlargement:
+                if area < min_area:
+                    inserting_child = e
+                    min_area = area
+        return inserting_child
 
     def adjust(self):
         if len(self.children) <= self.tree.MAX_CHILDREN_NUM:
             return [self]
         return self.split()
 
-
-
-    def split(self):
-        ExternalNode1, ExternalNode2, RemainNodes = self.pickseeds()
-        threshold = self.tree.MAX_CHILDREN_NUM - self.tree.MIN_CHILDREN_NUM + 1
-        while (len(ExternalNode1) != threshold and len(ExternalNode2) != threshold and len(RemainNodes) != 0):
-            d1 = []
-            d2 = []
-            Node1Geom = [c.geom for c in ExternalNode1]
-            Node2Geom = [d.geom for d in ExternalNode2]
-            NodesGeom = [e.geom for e in RemainNodes]
-            for i in range(len(NodesGeom)):
-                d1.append(self.differenceArea(Node1Geom, NodesGeom[i]))
-                d2.append(self.differenceArea(Node2Geom, NodesGeom[i]))
-            index = self.getMaxDifferenceIndex(d1, d2)
-            if d1[index] < d2[index]:
-                ExternalNode1.append(RemainNodes[index])
-            elif d1[index] > d2[index]:
-                ExternalNode2.append(RemainNodes[index])
+    def quadratic_split(self):
+        seeds, remain_entries = self.pick_seeds()
+        groups = [[seeds[0]], [seeds[1]]]
+        group_bounding_boxes = [seeds[0].geom, seeds[1].geom]
+        while len(remain_entries) > 0:
+            if len(groups[0]) > self.tree.MIN_CHILDREN_NUM:
+                groups[1] += remain_entries
+                break
+            if len(groups[1]) > self.tree.MIN_CHILDREN_NUM:
+                groups[0] += remain_entries
+                break
+            e, bounding_boxes = self.pick_next(remain_entries, group_bounding_boxes)
+            areas = [bounding_boxes[0].area, bounding_boxes[1].area]
+            area_differences = [areas[0] - group_bounding_boxes[0].area, areas[1] - group_bounding_boxes[1].area]
+            if area_differences[0] < area_differences[1]:
+                target_group_id = 0
+            elif area_differences[0] > area_differences[1]:
+                target_group_id = 1
             else:
-                if bounding_box(Node1Geom).area < bounding_box(Node2Geom).area:
-                    ExternalNode1.append(RemainNodes[index])
-                elif bounding_box(Node1Geom).area > bounding_box(Node2Geom).area:
-                    ExternalNode2.append(RemainNodes[index])
+                if areas[0] < areas[1]:
+                    target_group_id = 0
+                elif areas[0] > areas[1]:
+                    target_group_id = 1
                 else:
-                    if len(ExternalNode1) < len(ExternalNode2):
-                        ExternalNode1.append(RemainNodes[index])
-                    elif len(ExternalNode1) < len(ExternalNode2):
-                        ExternalNode2.append(RemainNodes[index])
+                    if len(groups[0]) <= len(groups[1]):
+                        target_group_id = 0
                     else:
-                        ExternalNode1.append(RemainNodes[index])
-            RemainNodes.pop(index)
-        if len(ExternalNode1) == threshold:
-            for node in RemainNodes:
-                ExternalNode2.append(node)
-        else:
-            for node in RemainNodes:
-                ExternalNode1.append(node)
+                        target_group_id = 1
+            groups[target_group_id].append(e)
+            group_bounding_boxes[target_group_id] = bounding_boxes[target_group_id]
+        return [Node.create_with_children(self.tree, group) for group in groups]
 
-        return [Node.create_with_children(self.tree, c) for c in [ExternalNode1, ExternalNode2]]
-
-    def pickseeds(self):
-        node1index = 0
-        node2index = 0
-        freeArea = 0
-        for i in range(len(self.children)):
+    def pick_seeds(self):
+        seeds = []
+        area_difference = -float('inf')
+        for i in range(0, len(self.children) - 1):
             for j in range(i + 1, len(self.children)):
-                cndiateMBR = bounding_box([self.children[i].geom, self.children[j].geom]).area
-                condiatefreearea = cndiateMBR - self.children[i].geom.area - self.children[j].geom.area
-                if condiatefreearea > freeArea:
-                    node1index = i
-                    node2index = j
-                    freeArea = condiatefreearea
-        nodelist = []
-        for i in range(len(self.children)):
-            if i == node1index or i == node2index:
-                pass
-            else:
-                nodelist.append(self.children[i])
-        return [self.children[node1index]], [self.children[node2index]], nodelist
+                area = bounding_box([self.children[i].geom, self.children[j].geom]).area - self.children[i].geom.area - \
+                       self.children[j].geom.area
+                if area > area_difference:
+                    seeds = (self.children[i], self.children[j])
+                    area_difference = area
+        remain_entries = []
+        for e in self.children:
+            if e not in seeds:
+                remain_entries.append(e)
+        return seeds, remain_entries
 
-    def differenceArea(self, nodes, node):
-        area1 = bounding_box(nodes).area
-        nodes.append(node)
-        area2 = bounding_box(nodes).area
-        return abs(area1 - area2)
+    @staticmethod
+    def pick_next(remain_entries, group_bounding_boxes):
+        difference = -1
+        for i in range(len(remain_entries)):
+            bbox1 = bounding_box([group_bounding_boxes[0], remain_entries[i].geom])
+            bbox2 = bounding_box([group_bounding_boxes[1], remain_entries[i].geom])
+            d1 = bbox1.area - group_bounding_boxes[0].area
+            d2 = bbox2.area - group_bounding_boxes[1].area
+            if abs(d1 - d2) > difference:
+                difference = abs(d1 - d2)
+                next_entry_id = i
+                next_bounding_boxes = [bbox1, bbox2]
+        next_entry = remain_entries.pop(next_entry_id)
+        return next_entry, next_bounding_boxes
 
-    def getMaxDifferenceIndex(self, d1, d2):
-        maxDiff = 0
-        index = 0
-        for i in range(len(d1)):
-            Diff = abs(d1[i] - d2[i])
-            if Diff > maxDiff:
-                maxDiff = Diff
-                index = i
-        return index
-
+    split = quadratic_split
     # def split(self):
     #     clusters = k_means_cluster(self.tree.CLUSTER_NUM, self.children)
     #     return [Node.create_with_children(self.tree, c) for c in clusters]
