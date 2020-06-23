@@ -182,7 +182,7 @@ def bi_verification(q, k, candidate_region, facility_index, user_index, facility
     IO += retrieve_candidates_io
     candidates = [(o, p, p.distance(q)) for o, p in candidates]
     candidates.sort(key=lambda x: x[2])
-    r_q, r_q_io = bi_knn_radius(q, k - 1, facility_index, facility_cache)
+    r_q, r_q_io = bi_knn_radius(q, k, facility_index, facility_cache)
     semi_r_q = r_q / 2
     inner_candidates = list()
     outer_candidates = list()

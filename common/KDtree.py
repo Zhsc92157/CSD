@@ -45,19 +45,15 @@ class KDTree(object):
             node.box = box(mins[0], mins[1], maxes[0], maxes[1])
             return node
         else:
-            # points = [self.points[i] for i in idx]
             d = np.argmax(maxes - mins)
             maxval = maxes[d]
             minval = mins[d]
             if maxval == minval:
-                # all points are identical; warn user?
                 node = KDTree.LeafNode(idx)
                 node.box = box(mins[0], mins[1], maxes[0], maxes[1])
                 return node
             data = np.asarray([self.points[i].coords[0][d] for i in idx])
 
-            # sliding midpoint rule; see Maneewongvatana and Mount 1999
-            # for arguments that this is a good idea.
             split = (maxval + minval) / 2
             less_idx = np.nonzero(data <= split)[0]
             greater_idx = np.nonzero(data > split)[0]
@@ -70,7 +66,6 @@ class KDTree(object):
                 less_idx = np.nonzero(data < split)[0]
                 greater_idx = np.nonzero(data >= split)[0]
             if len(less_idx) == 0:
-                # _still_ zero? all must have the same value
                 if not np.all(data == data[0]):
                     raise ValueError("Troublesome data array: %s" % data)
                 split = data[0]
@@ -112,8 +107,6 @@ class KDTree(object):
                     near, far = node.less, node.greater
                 else:
                     near, far = node.greater, node.less
-
-                # near child is at the same distance as the current node
                 heap.push((min_distance, near))
 
                 far_min_distance = far.box.distance(q)
@@ -148,12 +141,8 @@ class KDTree(object):
                 else:
                     near, far = node.greater, node.less
                 IO += 2
-
-                # near child is at the same distance as the current node
                 heap.push((min_distance, near))
-
                 far_min_distance = far.box.distance(q)
-
                 if far_min_distance <= distance_upper_bound:
                     heap.push((far_min_distance, far))
         return (nn_id, self.points[nn_id], distance_upper_bound), IO

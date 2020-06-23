@@ -250,6 +250,7 @@ class CSDBiTest(BiTest):
 
 
 def Effect_of_k_on_MonoRkNN():
+    print('Effect_of_k_on_MonoRkNN')
     time = 10
     # uniform
     num = 100000
@@ -275,18 +276,19 @@ def Effect_of_k_on_MonoRkNN():
         k = 10 ** i
         test.run(k, time)
 
-    test = SLICEMonoTest(num, 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-    test = VRMonoTest(num, 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
+    # test = SLICEMonoTest(num, 'Real')
+    # for i in range(0, 4):
+    #     k = 10 ** i
+    #     test.run(k, time)
+    #
+    # test = VRMonoTest(num, 'Real')
+    # for i in range(0, 4):
+    #     k = 10 ** i
+    #     test.run(k, time)
 
 
 def Effect_of_k_on_BiRkNN():
+    print('Effect_of_k_on_BiRkNN')
     time = 10
     # uniform
     user_num = 100000
@@ -321,10 +323,11 @@ def Effect_of_k_on_BiRkNN():
 
 
 def Effect_of_data_size_on_MonoRkNN():
+    print('Effect_of_data_size_on_MonoRkNN')
     time = 10
     k = 100
     for i in range(3, 7):
-        test = SLICEMonoTest(10 ** i)
+        test = CSDMonoTest(10 ** i)
         test.run(k, time)
     for i in range(3, 7):
         test = SLICEMonoTest(10 ** i)
@@ -335,6 +338,7 @@ def Effect_of_data_size_on_MonoRkNN():
 
 
 def Effect_of_data_size_on_BiRkNN():
+    print('Effect_of_data_size_on_BiRkNN')
     time = 10
     k = 100
     for i in range(3, 7):
@@ -349,7 +353,7 @@ def Effect_of_data_size_on_BiRkNN():
 
 
 def Effect_of_user_per_facility():
-    print 'bi_effect_user_per_facility'
+    print('Effect_of_user_per_facility')
     time = 10
     k = 100
     facility_num = 100000
@@ -368,6 +372,7 @@ def Effect_of_user_per_facility():
 
 
 def Effect_of_distribution():
+    print('Effect_of_distribution')
     time = 10
     k = 100
     distributions = [('Uniform', 'Uniform'), ('Uniform', 'Normal'), ('Uniform', 'Real'), ('Normal', 'Uniform'),
