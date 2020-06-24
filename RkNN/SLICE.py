@@ -69,7 +69,7 @@ def BiRkNN(q_id, k, facility_index, user_index, partition_num=12):
 
 
 def pruning(q_id, q, k, index, partition_num):
-    partitions =common.partitions(q, index.space, partition_num)
+    partitions = common.partitions(q, index.space, partition_num)
     sigLists = [[] for i in range(partition_num)]
     upper_arc_radius_heaps = [common.MaxHeap() for i in range(partition_num)]
     shaded_areas = [calculate_shaded_area(partition, partition.r) for partition in partitions]
@@ -239,6 +239,7 @@ def angle(o, x, y):
 
 def sector_id(p, origin, sector_num):
     return int(angle_with_x(origin, p) / (2 * pi / sector_num))
+
 
 def angle_with_x(p_start, p_end):
     dist = p_start.distance(p_end)
