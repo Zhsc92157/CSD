@@ -126,7 +126,7 @@ def mono_knn_radius(q_id, q, k, index, cache):
     return knn[-1][2], knn_io
 
 
-def BiRkNN(q_id, k, facility_index, user_index):
+def BiRkNN(q_id, k, facility_index, user_index, with_statistics=True):
     begin_time = time()
     facility_cache = dict()
     q = facility_index.points[q_id]
@@ -134,11 +134,15 @@ def BiRkNN(q_id, k, facility_index, user_index):
     candidate_region, pruning_io = bi_pruning(q_id, q, k, facility_index, facility_cache)
     pruning_io += 1
     pruning_time = time()
+
     result, verification_io, candidate_num, verified_candidate_num = bi_verification(q, k, candidate_region,
                                                                                      facility_index, user_index,
                                                                                      facility_cache)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def bi_pruning(q_id, q, k, index, cache):

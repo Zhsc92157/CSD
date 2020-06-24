@@ -5,7 +5,6 @@ from common.Rtree import RtreeIndex
 from common.VoronoiDiagram import VoronoiDiagram
 
 
-
 class VoRtreeIndex(RtreeIndex):
     def __init__(self, minx, miny, maxx, maxy, data):
         super(VoRtreeIndex, self).__init__(minx, miny, maxx, maxy, data)
@@ -29,7 +28,7 @@ class VoRtreeIndex(RtreeIndex):
                         nn = child
                         best_dist = c_dist
                 if self.voronoi_diagram.cell(nn.obj).intersects(q):
-                    return (nn.obj, nn.geom, best_dist),IO
+                    return (nn.obj, nn.geom, best_dist), IO
             else:
                 for child in e.children:
                     IO += 1
