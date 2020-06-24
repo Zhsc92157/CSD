@@ -53,4 +53,3 @@ Retrieve the R*k*NNs of the (*q*-1)th facility form the user set:
  (730, <shapely.geometry.point.Point object at 0x11730a810>), (720, <shapely.geometry.point.Point object at 0x11730a590>), 
  (306, <shapely.geometry.point.Point object at 0x1172dcc50>), (915, <shapely.geometry.point.Point object at 0x11731e710>)]
 ```
-
