@@ -42,14 +42,42 @@ Index the facilities and users:
 >>> user_index = VoKDtreeIndex(bounds[0], bounds[1], bounds[2], bounds[3], users)
 >>> facility_index = VoKDtreeIndex(bounds[0], bounds[1], bounds[2], bounds[3], facilities)
 ```
-Retrieve the R*k*NNs of the (*q*-1)th facility form the user set:
+Retrieve the Bi-R*k*NNs of the (*q*-1)-th facility form the user set:
 ```python
->>> from RkNN.CSD import BiRkNN
+>>> from RkNN.CSD import BiRkNN, MonoRkNN
 >>> q, k = np.random.randint(0, len(facilities)), 10 
->>> print BiRkNN(q, k, facility_index, user_index)
-[(937, <shapely.geometry.point.Point object at 0x11731ec90>), (367, <shapely.geometry.point.Point object at 0x1172e2bd0>), 
- (155, <shapely.geometry.point.Point object at 0x117281610>), (143, <shapely.geometry.point.Point object at 0x117281310>), 
- (52, <shapely.geometry.point.Point object at 0x117276bd0>), (965, <shapely.geometry.point.Point object at 0x1173243d0>), 
- (730, <shapely.geometry.point.Point object at 0x11730a810>), (720, <shapely.geometry.point.Point object at 0x11730a590>), 
- (306, <shapely.geometry.point.Point object at 0x1172dcc50>), (915, <shapely.geometry.point.Point object at 0x11731e710>)]
+>>> bi_rknn = BiRkNN(q, k, facility_index, user_index)
+>>> print bi_rknn
+[(727, <shapely.geometry.point.Point object at 0x1037d1590>), 
+ (175, <shapely.geometry.point.Point object at 0x103796950>), 
+ ..., (13, <shapely.geometry.point.Point object at 0x10375f050>)]
 ```
+Retrieve the Mono-R*k*NNs of the (*q*-1)-th facility form the facility set:
+```python
+>>> mono_rknn = BiRkNN(q, k, facility_index, user_index)
+>>> print mono_rknn
+[(334, <shapely.geometry.point.Point object at 0x10380dfd0>),
+ (906, <shapely.geometry.point.Point object at 0x103850110>),
+ ..., (712, <shapely.geometry.point.Point object at 0x103835fd0>)]
+```
+Plot the result:
+```python
+>>> import matplotlib.pyplot as plt
+>>> from common import plot_points, plot_stars
+>>> fig = plt.figure(figsize=(16, 8))
+>>> bi_rknn_ax = fig.add_subplot(121)
+>>> plot_points(bi_rknn_ax, facilities, 'gray', 4, 'Facilities')
+>>> plot_points(bi_rknn_ax, users, 'blue', 4, 'Users')
+>>> plot_stars(bi_rknn_ax,[facilities[q]],'green',20,'Query facility')
+>>> plot_points(bi_rknn_ax, bi_rknn, 'red', 8, 'RkNNs')
+>>> bi_rknn_ax.set_xlabel('Bi-RkNN')
+>>> bi_rknn_ax.legend()
+>>> mono_rknn_ax = fig.add_subplot(122)
+>>> plot_points(mono_rknn_ax, facilities, 'gray', 4, 'Facilities')
+>>> plot_stars(mono_rknn_ax,[facilities[q]],'green',20,'Query facility')
+>>> plot_points(mono_rknn_ax, mono_rknn, 'red', 8, 'RkNNs')
+>>> mono_rknn_ax.set_xlabel('Mono-RkNN')
+>>> mono_rknn_ax.legend()
+>>> plt.show()
+```
+![](images/demo.png)
