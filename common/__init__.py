@@ -161,3 +161,15 @@ class NLargestHolder:
     def __iter__(self):
         for i in self.items:
             yield i
+
+
+def plot_points(ax, data, color, size, label):
+    x = [geom.x for id, geom in data]
+    y = [geom.y for id, geom in data]
+    ax.plot(x, y, '.', markersize=size, color=color, label=label)
+
+
+def plot_stars(ax, data, color, size, label):
+    x = [geom.x for id, geom in data]
+    y = [geom.y for id, geom in data]
+    ax.plot(x, y, '*', markersize=size, color=color, label=label)
