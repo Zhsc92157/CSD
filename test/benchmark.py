@@ -242,7 +242,7 @@ def Effect_of_data_size_on_MonoRkNN(times):
 def Effect_of_data_size_on_BiRkNN(times):
     print('Effect of data size on BiRkNN')
     k = 100
-    data_size_list = [1e3, 1e4, 1e5, 1e6]
+    data_size_list = [1000, 10000, 100000, 1000000]
     for data_size in data_size_list:
         print 'Data size =', data_size
         vokdtree_facility_index = generate_index('VoKDtree', data_size, 'Uniform')
@@ -260,7 +260,7 @@ def Effect_of_data_size_on_BiRkNN(times):
 def Effect_of_user_per_facility(times):
     print('Effect of |U|/|F|')
     k = 100
-    facility_num = 1000
+    facility_num = 100000
     user_per_facility = [0.5, 1, 2, 4]
     vokdtree_facility_index = generate_index('VoKDtree', facility_num, 'Uniform')
     vortree_facility_index = generate_index('VoRtree', facility_num, 'Uniform')
@@ -283,7 +283,7 @@ def Effect_of_distribution(times):
     distributions = [('Uniform', 'Uniform'), ('Uniform', 'Normal'), ('Uniform', 'Real'), ('Normal', 'Uniform'),
                      ('Normal', 'Normal'), ('Normal', 'Real'), ('Real', 'Uniform'), ('Real', 'Normal'),
                      ('Real', 'Real')]
-    data_size = 500
+    data_size = 100000
     for d in distributions:
         print 'user distribution: {}, facility distribution: {}'.format(d[0], d[1])
         vokdtree_facility_index = generate_index('VoKDtree', data_size, d[1])
@@ -296,8 +296,3 @@ def Effect_of_distribution(times):
         test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
         print 'VR-RkNN'
         test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
-
-
-if __name__ == '__main__':
-    Effect_of_user_per_facility(3)
-#
