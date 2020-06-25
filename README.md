@@ -10,7 +10,7 @@ The experimental results indicate that the efficiency of CSD-R*k*NN is significa
 ```
 ├── data/: real data set
 │   └── us50000.txt
-├── common/: common data structures (including Min-heap, Max-heap, Voronoi dagram, Rtree, KDtree, VoRtree and VoKDtree)
+├── common/: common data structures, spatial indices and ploting functions
 │   ├── __init__.py
 │   ├── VoronoiDiagram.py
 │   ├── Rtree.py
@@ -31,10 +31,10 @@ Generate the facility set and user set:
 >>> import numpy as np
 >>> from shapely.geometry import Point
 >>> bounds = (0, 0, 10000, 10000)
->>> users = [(i, Point(np.random.uniform(bounds[0], bounds[2]), np.random.uniform(bounds[1], bounds[3]))) for i in
-             range(1000)]
->>> facilities = [(i, Point(np.random.uniform(bounds[0], bounds[2]), np.random.uniform(bounds[1], bounds[3]))) for i in
-                  range(1000)]
+>>> users = [(i, Point(np.random.uniform(bounds[0], bounds[2]), np.random.uniform(bounds[1], bounds[3])))
+             for i in range(1000)]
+>>> facilities = [(i, Point(np.random.uniform(bounds[0], bounds[2]), np.random.uniform(bounds[1], bounds[3])))
+                  for i in range(1000)]
 ```
 Index the facilities and users:
 ```python
