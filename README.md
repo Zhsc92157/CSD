@@ -81,3 +81,16 @@ Plot the result:
 >>> plt.show()
 ```
 ![](images/demo.png)
+## Evaluation
+If you want to evaluate the performance of CSD-R*k*NN against other algorithms (e.g., SLICE and VR-R*k*NN), we provide some benchmarks:
+```python
+from test import benchmark
+>>> benchmark.Effect_of_data_size_on_BiRkNN(30) # evaluate the effect of data size on Bi-RkNN
+>>> benchmark.Effect_of_data_size_on_MonoRkNN(30) # evaluate the effect of data size on Mono-RkNN
+>>> benchmark.Effect_of_k_on_BiRkNN_in_real_distribution(30) # evaluate the effect of k on Bi-RkNN in real distribution
+>>> benchmark.Effect_of_k_on_MonoRkNN_in_real_distribution(30) # evaluate the effect of k on Mono-RkNN in real distribution
+>>> benchmark.Effect_of_k_on_BiRkNN_in_uniform_distribution(30) # evaluate the effect of k on Bi-RkNN in uniform distribution
+>>> benchmark.Effect_of_k_on_MonoRkNN_in_uniform_distribution(30) # evaluate the effect of k on Mono-RkNN in uniform distribution
+>>> benchmark.Effect_of_user_num_relative_to_facility_num(30) # evaluate the effect of the number of users relative to the number of facilities on Bi-RkNN
+>>> benchmark.Effect_of_distribution(30) # evaluate the effect of data distribution on Bi-RkNN
+```

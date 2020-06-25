@@ -257,7 +257,7 @@ def Effect_of_data_size_on_BiRkNN(times):
         test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
-def Effect_of_user_per_facility(times):
+def Effect_of_user_num_relative_to_facility_num(times):
     print('Effect of |U|/|F|')
     k = 100
     facility_num = 100000
