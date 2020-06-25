@@ -84,7 +84,7 @@ Plot the result:
 ## Evaluation
 If you want to evaluate the performance of CSD-R*k*NN against other algorithms (e.g., SLICE and VR-R*k*NN), we provide some benchmarks:
 ```python
-from test import benchmark
+>>> from test import benchmark
 >>> benchmark.Effect_of_data_size_on_BiRkNN(30) # evaluate the effect of data size on Bi-RkNN
 >>> benchmark.Effect_of_data_size_on_MonoRkNN(30) # evaluate the effect of data size on Mono-RkNN
 >>> benchmark.Effect_of_k_on_BiRkNN_in_real_distribution(30) # evaluate the effect of k on Bi-RkNN in real distribution
