@@ -4,7 +4,7 @@ import common
 from common import MinHeap
 
 
-def MonoRkNN(q_id, k, index):
+def MonoRkNN(q_id, k, index, with_statistics=False):
     begin_time = time()
     cache = dict()
     q = index.points[q_id]
@@ -15,7 +15,10 @@ def MonoRkNN(q_id, k, index):
     result, verification_io, candidate_num, verified_candidate_num = mono_verification(q_id, q, k, candidates, index,
                                                                                        cache)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def mono_pruning(q_id, q, k, index, cache):
@@ -126,7 +129,7 @@ def mono_knn_radius(q_id, q, k, index, cache):
     return knn[-1][2], knn_io
 
 
-def BiRkNN(q_id, k, facility_index, user_index, with_statistics=True):
+def BiRkNN(q_id, k, facility_index, user_index, with_statistics=False):
     begin_time = time()
     facility_cache = dict()
     q = facility_index.points[q_id]

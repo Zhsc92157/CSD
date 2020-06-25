@@ -3,7 +3,7 @@ from time import time
 import common
 
 
-def MonoRkNN(q_id, k, index):
+def MonoRkNN(q_id, k, index, with_statistics=False):
     begin_time = time()
     cache = dict()
     q = index.points[q_id]
@@ -11,9 +11,13 @@ def MonoRkNN(q_id, k, index):
     candidates, pruning_io = mono_pruning(q_id, q, k, index, cache)
     pruning_io += 1
     pruning_time = time()
-    result, verification_io, candidate_num, verified_candidate_num = mono_verification(q_id, q, k, candidates, index,                                                                                       cache)
+    result, verification_io, candidate_num, verified_candidate_num = mono_verification(q_id, q, k, candidates, index,
+                                                                                       cache)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def mono_pruning(q_id, q, k, index, cache):
@@ -86,7 +90,7 @@ def mono_verification(q_id, q, k, candidates, index, cache):
     return rknn, IO, len(candidates), len(candidates)
 
 
-def BiRkNN(q_id, k, facility_index, user_index):
+def BiRkNN(q_id, k, facility_index, user_index, with_statistics=False):
     begin_time = time()
     facility_cache = dict()
     q = facility_index.points[q_id]
@@ -98,7 +102,10 @@ def BiRkNN(q_id, k, facility_index, user_index):
                                                                                      facility_index, user_index,
                                                                                      facility_cache)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def bi_pruning(q_id, q, k, index, cache):
@@ -199,7 +206,7 @@ def NN(index, q):
     return (nn.obj, nn.geom, best_dist), IO
 
 
-def kNN(index, q, k, cache,nn=None):
+def kNN(index, q, k, cache, nn=None):
     IO = 0
     knn = list()
     h = common.MinHeap()

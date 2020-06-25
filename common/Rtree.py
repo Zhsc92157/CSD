@@ -26,6 +26,7 @@ class RtreeIndex(object):
         self.space = box(minx, miny, maxx, maxy)
         self.geometries = dict()
         self.points = self.geometries
+        self.size=len(data)
         for e in data:
             self.insert(e[0], e[1])
 

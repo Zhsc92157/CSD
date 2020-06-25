@@ -4,16 +4,14 @@ import numpy as np
 
 from shapely.geometry import Point
 
-# from RkNN import *
 from RkNN import VR_BiRkNN, CSD_MonoRkNN, SLICE_BiRkNN, CSD_BiRkNN, VR_MonoRkNN, SLICE_MonoRkNN
 from common.Rtree import RtreeIndex
 from common.VoKDtree import VoKDtreeIndex
 from common.VoRtee import VoRtreeIndex
-import matplotlib.pyplot as plt
 
 
-def generate_points(n, mode='Uniform', bounds=None):
-    if mode == 'Uniform':
+def generate_points(n, distribution='Uniform', bounds=None):
+    if distribution == 'Uniform':
         if bounds is None:
             bounds = (0, 0, 10000, 10000)
         p_set = set()
@@ -26,7 +24,7 @@ def generate_points(n, mode='Uniform', bounds=None):
                 data.append((len(p_set) - 1, Point(x, y)))
         return data
 
-    if mode == 'Normal':
+    if distribution == 'Normal':
         if bounds is None:
             bounds = (0, 0, 10000, 10000)
         p_set = set()
@@ -43,7 +41,7 @@ def generate_points(n, mode='Uniform', bounds=None):
                 data.append((len(p_set) - 1, Point(x, y)))
         return data
 
-    if mode == 'Real':
+    if distribution == 'Real':
         if bounds is None:
             bounds = (-125.733611, 23.546944, -65.95, 50.361794)
         path = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'data/us50000.txt')
@@ -62,338 +60,244 @@ def generate_points(n, mode='Uniform', bounds=None):
         return data
 
 
-class MonoTest:
-    def __init__(self, num, distribution='Uniform'):
-        self.num = num
-        self.distribution = distribution
+def generate_index(index_type, n, distribution='Uniform', bounds=None):
+    if bounds is None:
         if distribution == 'Real':
-            self.bounds = (-125.733611, 23.546944, -65.95, 50.361794)
+            bounds = (-125.733611, 23.546944, -65.95, 50.361794)
         else:
-            self.bounds = (0, 0, 10000, 10000)
-        self.points = generate_points(self.num, self.distribution)
-
-    def run(self, k, times):
-        print
-        print '{}(k={}, number={}, distribution={}) '.format(
-            self.algorithm.name, k, self.num, self.distribution)
-        total_pruning_cost = 0
-        total_verification_cost = 0
-        total_pruning_io = 0
-        total_verification_io = 0
-        total_candidate_num = 0
-        total_verified_candidate_num = 0
-        width = 152
-
-        print '-' * width
-        print '| Instance | Pruning time (ms) | Pruning IO | Verification time (ms) | Verification IO | Total time (' \
-              'ms) | Total IO | #candidate | #verified candidate |'
-        print '-' * width
-        for i in range(times):
-            q_id = random.randint(0, self.num - 1)
-            result, pruning_cost, verification_cost, pruning_io, verification_io, candidate_num, verified_candidate_num = self.algorithm(
-                q_id, k, self.index)
-            total_pruning_cost += pruning_cost
-            total_verification_cost += verification_cost
-            total_pruning_io += pruning_io
-            total_verification_io += verification_io
-            total_candidate_num += candidate_num
-            total_verified_candidate_num += verified_candidate_num
-            print '| {:^8} | {:>17.2f} | {:>10} | {:>22.2f} | {:>15} | {:>15.2f} | {:>8} | {:>10} | {:>19} |'.format(
-                i + 1,
-                pruning_cost * 1000, pruning_io,
-                verification_cost * 1000, verification_io,
-                pruning_cost * 1000 + verification_cost * 1000, pruning_io + verification_io, candidate_num,
-                verified_candidate_num)
-        print '-' * width
-        print '|  Average | {:>17.2f} | {:>10.2f} | {:>22.2f} | {:>15.2f} | {:>15.2f} | {:>8.2f} | {:>10.2f} | {:>19.2f} |'.format(
-            total_pruning_cost / times * 1000, total_pruning_io / float(times),
-            total_verification_cost / times * 1000, total_verification_io / float(times),
-            total_pruning_cost / times * 1000 + total_verification_cost / times * 1000,
-            total_pruning_io / float(times) + total_verification_io / float(times), total_candidate_num / float(times),
-            total_verified_candidate_num / float(times))
-        print '-' * width
-        print
+            bounds = (0, 0, 10000, 10000)
+    points = generate_points(n, distribution, bounds)
+    if index_type == 'Rtree':
+        return RtreeIndex(bounds[0], bounds[1], bounds[2], bounds[3], points)
+    elif index_type == 'VoRtree':
+        return VoRtreeIndex(bounds[0], bounds[1], bounds[2], bounds[3], points)
+    elif index_type == 'VoKDtree':
+        return VoKDtreeIndex(bounds[0], bounds[1], bounds[2], bounds[3], points)
+    return None
 
 
-class CSDMonoTest(MonoTest):
-    def __init__(self, num, distribution='Uniform'):
-        MonoTest.__init__(self, num, distribution)
-        self.index = VoKDtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                   self.bounds[3],
-                                   self.points)
-        self.algorithm = CSD_MonoRkNN
+def test_mono_rknn(algorithm, index, k, times):
+    total_pruning_cost = 0
+    total_verification_cost = 0
+    total_pruning_io = 0
+    total_verification_io = 0
+    total_candidate_num = 0
+    total_verified_candidate_num = 0
+    width = 152
+    print '-' * width
+    print '| Instance | Pruning time (ms) | Pruning IO | Verification time (ms) | Verification IO | Total time (' \
+          'ms) | Total IO | #candidate | #verified candidate |'
+    print '-' * width
+    for i in range(times):
+        q_id = random.randint(0, index.size - 1)
+        result, pruning_cost, verification_cost, pruning_io, verification_io, candidate_num, verified_candidate_num = algorithm(
+            q_id, k, index, True)
+        total_pruning_cost += pruning_cost
+        total_verification_cost += verification_cost
+        total_pruning_io += pruning_io
+        total_verification_io += verification_io
+        total_candidate_num += candidate_num
+        total_verified_candidate_num += verified_candidate_num
+        print '| {:^8} | {:>17.2f} | {:>10} | {:>22.2f} | {:>15} | {:>15.2f} | {:>8} | {:>10} | {:>19} |'.format(
+            i + 1,
+            pruning_cost * 1000, pruning_io,
+            verification_cost * 1000, verification_io,
+            pruning_cost * 1000 + verification_cost * 1000, pruning_io + verification_io, candidate_num,
+            verified_candidate_num)
+    print '-' * width
+    print '|  Average | {:>17.2f} | {:>10.2f} | {:>22.2f} | {:>15.2f} | {:>15.2f} | {:>8.2f} | {:>10.2f} | {:>19.2f} |'.format(
+        total_pruning_cost / times * 1000, total_pruning_io / float(times),
+        total_verification_cost / times * 1000, total_verification_io / float(times),
+        total_pruning_cost / times * 1000 + total_verification_cost / times * 1000,
+        total_pruning_io / float(times) + total_verification_io / float(times), total_candidate_num / float(times),
+        total_verified_candidate_num / float(times))
+    print '-' * width
 
 
-class SLICEMonoTest(MonoTest):
-    def __init__(self, num, distribution='Uniform'):
-        MonoTest.__init__(self, num, distribution)
-        self.index = RtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                self.bounds[3],
-                                self.points)
-        self.algorithm = SLICE_MonoRkNN
+def test_bi_rknn(algorithm, facility_index, user_index, k, times):
+    total_pruning_cost = 0
+    total_verification_cost = 0
+    total_pruning_io = 0
+    total_verification_io = 0
+    total_candidate_num = 0
+    total_verified_candidate_num = 0
+    width = 152
+    print '-' * width
+    print '| Instance | Pruning time (ms) | Pruning IO | Verification time (ms) | Verification IO | Total time (' \
+          'ms) | Total IO | #candidate | #verified candidate |'
+    print '-' * width
+    for i in range(times):
+        q_id = random.randint(0, facility_index.size - 1)
+        result, pruning_cost, verification_cost, pruning_io, verification_io, candidate_num, verified_candidate_num = algorithm(
+            q_id, k, facility_index, user_index, True)
+        total_pruning_cost += pruning_cost
+        total_verification_cost += verification_cost
+        total_pruning_io += pruning_io
+        total_verification_io += verification_io
+        total_candidate_num += candidate_num
+        total_verified_candidate_num += verified_candidate_num
+        print '| {:^8} | {:>17.2f} | {:>10} | {:>22.2f} | {:>15} | {:>15.2f} | {:>8} | {:>10} | {:>19} |'.format(
+            i + 1,
+            pruning_cost * 1000, pruning_io,
+            verification_cost * 1000, verification_io,
+            pruning_cost * 1000 + verification_cost * 1000, pruning_io + verification_io, candidate_num,
+            verified_candidate_num)
+    print '-' * width
+    print '|  Average | {:>17.2f} | {:>10.2f} | {:>22.2f} | {:>15.2f} | {:>15.2f} | {:>8.2f} | {:>10.2f} | {:>19.2f} |'.format(
+        total_pruning_cost / times * 1000, total_pruning_io / float(times),
+        total_verification_cost / times * 1000, total_verification_io / float(times),
+        total_pruning_cost / times * 1000 + total_verification_cost / times * 1000,
+        total_pruning_io / float(times) + total_verification_io / float(times), total_candidate_num / float(times),
+        total_verified_candidate_num / float(times))
+    print '-' * width
 
 
-class VRMonoTest(MonoTest):
-    def __init__(self, num, distribution='Uniform'):
-        MonoTest.__init__(self, num, distribution)
-        self.index = VoRtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                  self.bounds[3],
-                                  self.points)
-        self.algorithm = VR_MonoRkNN
+def Effect_of_k_on_MonoRkNN_in_real_distribution(times):
+    print('Effect of k on BiRkNN in real distribution')
+    data_size = 49601
+    distribution = 'Real'
+    vokdtree_index = generate_index('VoKDtree', data_size, distribution)
+    vortree_index = generate_index('VoRtree', data_size, distribution)
+    k_list = [1, 10, 100, 1000]
+    for k in k_list:
+        print 'k =', k
+        print 'CSD-RkNN'
+        test_mono_rknn(CSD_MonoRkNN, vokdtree_index, k, times)
+        print 'SLICE'
+        test_mono_rknn(SLICE_MonoRkNN, vortree_index, k, times)
+        print 'VR-RkNN'
+        test_mono_rknn(VR_MonoRkNN, vortree_index, k, times)
 
 
-class BiTest:
-    def __init__(self, user_num, facility_num, user_distribution='Uniform', facility_distribution='Uniform'):
-        self.user_num = user_num
-        self.facility_num = facility_num
-        self.user_type = user_distribution
-        self.facility_distribution = facility_distribution
-        if user_distribution == 'Real' or facility_distribution == 'Real':
-            self.bounds = (-125.733611, 23.546944, -65.95, 50.361794)
-        else:
-            self.bounds = (0, 0, 10000, 10000)
-        self.facility = generate_points(self.facility_num, self.facility_distribution,
-                                        self.bounds)
-        self.user = generate_points(self.user_num, user_distribution, self.bounds)
-
-    def plot(self, k):
-        q_id = random.randint(0, self.facility_num - 1)
-        result, pruning_cost, verification_cost, pruning_io, verification_io, candidate_num, verified_candidate_num = self.algorithm.BiRkNN(
-            q_id, k,
-            self.facility_index,
-            self.user_index)
-        q = self.facility_index.points[q_id]
-        fig = plt.figure(figsize=(8, 8))
-        ax = fig.add_subplot(111)
-        ax.set_xlim(self.facility_bounds[0], self.facility_bounds[2])
-        ax.set_ylim(self.facility_bounds[1], self.facility_bounds[3])
-        for o, p in result:
-            plt.plot(p.x, p.y, '.', color='blue', markersize=4)
-        plt.plot(q.x, q.y, '.', color='red', markersize=15)
-        plt.show()
-
-    def run(self, k, times):
-        print
-        print '{}(k={}) User(number={}, distribution={}) Facility(number={}, distribution={})'.format(
-            self.algorithm.name, k, self.user_num, self.user_type, self.facility_num, self.facility_distribution)
-        total_pruning_cost = 0
-        total_verification_cost = 0
-        total_pruning_io = 0
-        total_verification_io = 0
-        total_candidate_num = 0
-        total_verified_candidate_num = 0
-        width = 152
-
-        print '-' * width
-        print '| Instance | Pruning time (ms) | Pruning IO | Verification time (ms) | Verification IO | Total time (' \
-              'ms) | Total IO | #candidate | #verified candidate |'
-        print '-' * width
-        for i in range(times):
-            q_id = random.randint(0, self.facility_num - 1)
-            result, pruning_cost, verification_cost, pruning_io, verification_io, candidate_num, verified_candidate_num = self.algorithm(
-                q_id, k,
-                self.facility_index,
-                self.user_index)
-            total_pruning_cost += pruning_cost
-            total_verification_cost += verification_cost
-            total_pruning_io += pruning_io
-            total_verification_io += verification_io
-            total_candidate_num += candidate_num
-            total_verified_candidate_num += verified_candidate_num
-            print '| {:^8} | {:>17.2f} | {:>10} | {:>22.2f} | {:>15} | {:>15.2f} | {:>8} | {:>10} | {:>19} |'.format(
-                i + 1,
-                pruning_cost * 1000, pruning_io,
-                verification_cost * 1000, verification_io,
-                pruning_cost * 1000 + verification_cost * 1000, pruning_io + verification_io, candidate_num,
-                verified_candidate_num)
-        print '-' * width
-        print '|  Average | {:>17.2f} | {:>10.2f} | {:>22.2f} | {:>15.2f} | {:>15.2f} | {:>8.2f} | {:>10.2f} | {:>19.2f} |'.format(
-            total_pruning_cost / times * 1000, total_pruning_io / float(times),
-            total_verification_cost / times * 1000, total_verification_io / float(times),
-            total_pruning_cost / times * 1000 + total_verification_cost / times * 1000,
-            total_pruning_io / float(times) + total_verification_io / float(times), total_candidate_num / float(times),
-            total_verified_candidate_num / float(times))
-        print '-' * width
-        print
+def Effect_of_k_on_MonoRkNN_in_uniform_distribution(times):
+    print('Effect of k on BiRkNN in uniform distribution')
+    data_size = 100000
+    distribution = 'Uniform'
+    vokdtree_index = generate_index('VoKDtree', data_size, distribution)
+    vortree_index = generate_index('VoRtree', data_size, distribution)
+    k_list = [1, 10, 100, 1000]
+    for k in k_list:
+        print 'k =', k
+        print 'CSD-RkNN'
+        test_mono_rknn(CSD_MonoRkNN, vokdtree_index, k, times)
+        print 'SLICE'
+        test_mono_rknn(SLICE_MonoRkNN, vortree_index, k, times)
+        print 'VR-RkNN'
+        test_mono_rknn(VR_MonoRkNN, vortree_index, k, times)
 
 
-class VRBiTest(BiTest):
-    def __init__(self, user_num, facility_num, user_distribution='Uniform', facility_type='Uniform'):
-        BiTest.__init__(self, user_num, facility_num, user_distribution, facility_type)
-        self.user_index = VoRtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                       self.bounds[3],
-                                       self.user)
-        self.facility_index = VoRtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                           self.bounds[3], self.facility)
-        self.algorithm = VR_BiRkNN
+def Effect_of_k_on_BiRkNN_in_real_distribution(times):
+    print('Effect of k on BiRkNN in real distribution')
+    data_size = 49601
+    distribution = 'Real'
+    vokdtree_facility_index = generate_index('VoKDtree', data_size, distribution)
+    vokdtree_user_index = generate_index('VoKDtree', data_size, distribution)
+    vortree_facility_index = generate_index('VoRtree', data_size, distribution)
+    vortree_user_index = generate_index('VoRtree', data_size, distribution)
+    k_list = [1, 10, 100, 1000]
+    for k in k_list:
+        print 'k =', k
+        print 'CSD-RkNN'
+        test_bi_rknn(CSD_BiRkNN, vokdtree_facility_index, vokdtree_user_index, k, times)
+        print 'SLICE'
+        test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
+        print 'VR-RkNN'
+        test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
-class SLICEBiTest(BiTest):
-    def __init__(self, user_num, facility_num, user_distribution='Uniform', facility_type='Uniform'):
-        BiTest.__init__(self, user_num, facility_num, user_distribution, facility_type)
-        self.user_index = RtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2], self.bounds[3],
-                                     self.user)
-        self.facility_index = RtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                         self.bounds[3], self.facility)
-        self.algorithm = SLICE_BiRkNN
+def Effect_of_k_on_BiRkNN_in_uniform_distribution(times):
+    data_size = 100000
+    distribution = 'Uniform'
+    vokdtree_facility_index = generate_index('VoKDtree', data_size, distribution)
+    vokdtree_user_index = generate_index('VoKDtree', data_size, distribution)
+    vortree_facility_index = generate_index('VoRtree', data_size, distribution)
+    vortree_user_index = generate_index('VoRtree', data_size, distribution)
+    k_list = [1, 10, 100, 1000]
+    for k in k_list:
+        print 'k = {}'.format(k)
+        print 'CSD-RkNN'
+        test_bi_rknn(CSD_BiRkNN, vokdtree_facility_index, vokdtree_user_index, k, times)
+        print 'SLICE'
+        test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
+        print 'VR-RkNN'
+        test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
-class CSDBiTest(BiTest):
-    def __init__(self, user_num, facility_num, user_distribution='Uniform', facility_type='Uniform'):
-        BiTest.__init__(self, user_num, facility_num, user_distribution, facility_type)
-        self.user_index = VoKDtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                        self.bounds[3],
-                                        self.user)
-        self.facility_index = VoKDtreeIndex(self.bounds[0], self.bounds[1], self.bounds[2],
-                                            self.bounds[3], self.facility)
-        self.algorithm = CSD_BiRkNN
-
-
-def Effect_of_k_on_MonoRkNN():
-    print('Effect_of_k_on_MonoRkNN')
-    time = 10
-    # uniform
-    num = 100000
-    test = CSDMonoTest(num, 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-    test = SLICEMonoTest(num, 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-    test = VRMonoTest(num, 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-    # real
-    num = 49601
-    test = CSDMonoTest(num, 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-    # test = SLICEMonoTest(num, 'Real')
-    # for i in range(0, 4):
-    #     k = 10 ** i
-    #     test.run(k, time)
-    #
-    # test = VRMonoTest(num, 'Real')
-    # for i in range(0, 4):
-    #     k = 10 ** i
-    #     test.run(k, time)
-
-
-def Effect_of_k_on_BiRkNN():
-    print('Effect_of_k_on_BiRkNN')
-    time = 10
-    # uniform
-    user_num = 100000
-    facility_num = 100000
-    test = CSDBiTest(user_num, facility_num, 'Uniform', 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-    test = SLICEBiTest(user_num, facility_num, 'Uniform', 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-    test = VRBiTest(user_num, facility_num, 'Uniform', 'Uniform')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-    # real
-    user_num = 49601
-    facility_num = 49601
-    test = CSDBiTest(user_num, facility_num, 'Real', 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-    test = SLICEBiTest(user_num, facility_num, 'Real', 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-    test = VRBiTest(user_num, facility_num, 'Real', 'Real')
-    for i in range(0, 4):
-        k = 10 ** i
-        test.run(k, time)
-
-
-def Effect_of_data_size_on_MonoRkNN():
-    print('Effect_of_data_size_on_MonoRkNN')
-    time = 10
+def Effect_of_data_size_on_MonoRkNN(times):
+    print('Effect of data size on MonoRkNN')
     k = 100
-    for i in range(3, 7):
-        test = CSDMonoTest(10 ** i)
-        test.run(k, time)
-    for i in range(3, 7):
-        test = SLICEMonoTest(10 ** i)
-        test.run(k, time)
-    for i in range(3, 7):
-        test = VRMonoTest(10 ** i)
-        test.run(k, time)
+    data_size_list = [1000, 10000, 100000, 1000000]
+    for data_size in data_size_list:
+        print 'Data size =', data_size
+        vokdtree_index = generate_index('VoKDtree', data_size, 'Uniform')
+        vortree_index = generate_index('VoRtree', data_size, 'Uniform')
+        print 'CSD-RkNN'
+        test_mono_rknn(CSD_MonoRkNN, vokdtree_index, k, times)
+        print 'SLICE'
+        test_mono_rknn(SLICE_MonoRkNN, vortree_index, k, times)
+        print 'VR-RkNN'
+        test_mono_rknn(VR_MonoRkNN, vortree_index, k, times)
 
 
-def Effect_of_data_size_on_BiRkNN():
-    print('Effect_of_data_size_on_BiRkNN')
-    time = 10
+def Effect_of_data_size_on_BiRkNN(times):
+    print('Effect of data size on BiRkNN')
     k = 100
-    for i in range(3, 7):
-        test = CSDBiTest(10 ** i, 10 ** i)
-        test.run(k, time)
-    for i in range(3, 7):
-        test = SLICEBiTest(10 ** i, 10 ** i)
-        test.run(k, time)
-    for i in range(3, 7):
-        test = VRBiTest(10 ** i, 10 ** i)
-        test.run(k, time)
+    data_size_list = [1e3, 1e4, 1e5, 1e6]
+    for data_size in data_size_list:
+        print 'Data size =', data_size
+        vokdtree_facility_index = generate_index('VoKDtree', data_size, 'Uniform')
+        vokdtree_user_index = generate_index('VoKDtree', data_size, 'Uniform')
+        vortree_facility_index = generate_index('VoRtree', data_size, 'Uniform')
+        vortree_user_index = generate_index('VoRtree', data_size, 'Uniform')
+        print 'CSD-RkNN'
+        test_bi_rknn(CSD_BiRkNN, vokdtree_facility_index, vokdtree_user_index, k, times)
+        print 'SLICE'
+        test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
+        print 'VR-RkNN'
+        test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
-def Effect_of_user_per_facility():
-    print('Effect_of_user_per_facility')
-    time = 10
+def Effect_of_user_per_facility(times):
+    print('Effect of |U|/|F|')
     k = 100
-    facility_num = 100000
-    for i in range(0, 4):
-        user_num = int(facility_num * 0.5 * (2 ** i))
-        test = CSDBiTest(user_num, facility_num)
-        test.run(k, time)
-    for i in range(0, 4):
-        user_num = int(facility_num * 0.5 * (2 ** i))
-        test = SLICEBiTest(user_num, facility_num)
-        test.run(k, time)
-    for i in range(0, 4):
-        user_num = int(facility_num * 0.5 * (2 ** i))
-        test = VRBiTest(user_num, facility_num)
-        test.run(k, time)
+    facility_num = 1000
+    user_per_facility = [0.5, 1, 2, 4]
+    vokdtree_facility_index = generate_index('VoKDtree', facility_num, 'Uniform')
+    vortree_facility_index = generate_index('VoRtree', facility_num, 'Uniform')
+    for i in user_per_facility:
+        user_num = i * facility_num
+        print '|U|/|F| = {:.0%}'.format(i)
+        vokdtree_user_index = generate_index('VoKDtree', user_num, 'Uniform')
+        vortree_user_index = generate_index('VoRtree', user_num, 'Uniform')
+        print 'CSD-RkNN'
+        test_bi_rknn(CSD_BiRkNN, vokdtree_facility_index, vokdtree_user_index, k, times)
+        print 'SLICE'
+        test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
+        print 'VR-RkNN'
+        test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
-def Effect_of_distribution():
-    print('Effect_of_distribution')
-    time = 10
+def Effect_of_distribution(times):
+    print('Effect of distribution')
     k = 100
     distributions = [('Uniform', 'Uniform'), ('Uniform', 'Normal'), ('Uniform', 'Real'), ('Normal', 'Uniform'),
                      ('Normal', 'Normal'), ('Normal', 'Real'), ('Real', 'Uniform'), ('Real', 'Normal'),
                      ('Real', 'Real')]
-    num = 49601
+    data_size = 500
     for d in distributions:
-        test = CSDBiTest(num, num, d[0], d[1])
-        test.run(k, time)
-    for d in distributions:
-        test = SLICEBiTest(num, num, d[0], d[1])
-        test.run(k, time)
-    for d in distributions:
-        test = VRBiTest(num, num, d[0], d[1])
-        test.run(k, time)
+        print 'user distribution: {}, facility distribution: {}'.format(d[0], d[1])
+        vokdtree_facility_index = generate_index('VoKDtree', data_size, d[1])
+        vokdtree_user_index = generate_index('VoKDtree', data_size, d[0])
+        vortree_facility_index = generate_index('VoRtree', data_size, d[1])
+        vortree_user_index = generate_index('VoRtree', data_size, d[0])
+        print 'CSD-RkNN'
+        test_bi_rknn(CSD_BiRkNN, vokdtree_facility_index, vokdtree_user_index, k, times)
+        print 'SLICE'
+        test_bi_rknn(SLICE_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
+        print 'VR-RkNN'
+        test_bi_rknn(VR_BiRkNN, vortree_facility_index, vortree_user_index, k, times)
 
 
 if __name__ == '__main__':
-    Effect_of_data_size_on_MonoRkNN()
-    Effect_of_data_size_on_BiRkNN()
-    Effect_of_k_on_MonoRkNN()
-    Effect_of_k_on_BiRkNN()
-    Effect_of_distribution()
-    Effect_of_user_per_facility()
+    Effect_of_user_per_facility(3)
+#

@@ -11,6 +11,7 @@ import common
 class KDTree(object):
     def __init__(self, minx, miny, maxx, maxy, data, leafsize=10):
         self.data = data
+        self.size=len(data)
         self.points = {e[0]: e[1] for e in data}
         self.idx = [e[0] for e in data]
         self.data_size = len(data)

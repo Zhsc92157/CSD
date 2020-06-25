@@ -46,7 +46,7 @@ Retrieve the R*k*NNs of the (*q*-1)th facility form the user set:
 ```python
 >>> from RkNN.CSD import BiRkNN
 >>> q, k = np.random.randint(0, len(facilities)), 10 
->>> print BiRkNN(q, k, facility_index, user_index, False)
+>>> print BiRkNN(q, k, facility_index, user_index)
 [(937, <shapely.geometry.point.Point object at 0x11731ec90>), (367, <shapely.geometry.point.Point object at 0x1172e2bd0>), 
  (155, <shapely.geometry.point.Point object at 0x117281610>), (143, <shapely.geometry.point.Point object at 0x117281310>), 
  (52, <shapely.geometry.point.Point object at 0x117276bd0>), (965, <shapely.geometry.point.Point object at 0x1173243d0>), 

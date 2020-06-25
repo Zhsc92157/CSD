@@ -8,7 +8,8 @@ import numpy as np
 import common
 
 
-def MonoRkNN(q_id, k, index, partition_num=12):
+def MonoRkNN(q_id, k, index, with_statistics=False):
+    partition_num = 12
     begin_time = time()
     q = index.geometries[q_id]
     sigLists, unpruned_area, pruning_io = pruning(q_id, q, k + 1, index, partition_num)
@@ -16,7 +17,11 @@ def MonoRkNN(q_id, k, index, partition_num=12):
     pruning_time = time()
     result, verification_io, candidate_num = mono_verification(q, k, sigLists, unpruned_area)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, candidate_num
+    verified_candidate_num = candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def mono_verification(q, k, sigLists, unpruned_area):
@@ -57,7 +62,8 @@ def mono_retrieve_candidates(sigLists, unpruned_area):
     return candidates, 0
 
 
-def BiRkNN(q_id, k, facility_index, user_index, partition_num=12):
+def BiRkNN(q_id, k, facility_index, user_index, with_statistics=False):
+    partition_num = 12
     begin_time = time()
     q = facility_index.geometries[q_id]
     sigLists, unpruned_area, pruning_io = pruning(q_id, q, k, facility_index, partition_num)
@@ -65,7 +71,11 @@ def BiRkNN(q_id, k, facility_index, user_index, partition_num=12):
     pruning_time = time()
     result, verification_io, candidate_num = bi_verification(q, k, user_index, sigLists, unpruned_area)
     verification_time = time()
-    return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, candidate_num
+    verified_candidate_num = candidate_num
+    if with_statistics:
+        return result, pruning_time - begin_time, verification_time - pruning_time, pruning_io, verification_io, candidate_num, verified_candidate_num
+    else:
+        return result
 
 
 def pruning(q_id, q, k, index, partition_num):
